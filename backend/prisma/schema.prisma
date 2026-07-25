@@ -1,0 +1,81 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  wallet    String   @unique
+  nonce     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions     Session[]
+  intents      Intent[]
+  transactions Transaction[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Intent {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  source    String
+  target    String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  simulations Simulation[]
+}
+
+model Simulation {
+  id        String   @id @default(uuid())
+  intentId  String
+  intent    Intent   @relation(fields: [intentId], references: [id])
+  data      String
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  signature String   @unique
+  type      String
+  status    String
+  fromToken String
+  fromAmount Float?
+  toToken   String?
+  toAmount  Float?
+  usdValue  Float?
+  timestamp DateTime @default(now())
+  intent    String?
+  riskLevel String?
+  route     String?
+  networkFee Float?
+}
+
+model AgentEvent {
+  id        String   @id @default(uuid())
+  agentType String
+  status    String
+  progress  Int
+  confidence Int
+  message   String
+  metadata  String?
+  createdAt DateTime @default(now())
+}

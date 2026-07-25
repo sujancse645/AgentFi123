@@ -1,0 +1,108 @@
+import { Router, Request, Response } from "express";
+import { jupiterService } from "../services/jupiterService";
+import { transactionService } from "../services/transactionService";
+import { agentEngine } from "../agents/agentEngine";
+import { getAIProvider } from "../ai";
+import { tokenRegistry } from "../services/tokenRegistry";
+
+const router = Router();
+const aiProvider = getAIProvider();
+
+import { prisma } from "../prisma";
+
+router.post("/", async (req: Request, res: Response) => {
+  const { intent, wallet } = req.body;
+  try {
+    const parsed = await aiProvider.parseIntent(intent);
+    
+    // Check risk using the risk agent (mocked risk check)
+    agentEngine.updateAgent("risk", { status: "analyzing", message: "Evaluating token risk...", progress: 50 });
+    
+    const sourceTokenInfo = tokenRegistry.getTokenByTicker(parsed.sourceToken);
+    const targetTokenInfo = tokenRegistry.getTokenByTicker(parsed.targetToken);
+    
+    if (!sourceTokenInfo || !targetTokenInfo) {
+      agentEngine.updateAgent("risk", { status: "failed", message: "Unverified token detected" });
+      throw new Error("One or more tokens are not in the verified token registry.");
+    }
+
+    agentEngine.updateAgent("risk", { status: "completed", message: "Risk checks passed", progress: 100, confidence: 99 });
+    
+    const user = await prisma.user.upsert({
+      where: { wallet: wallet || 'demo-wallet' },
+      update: {},
+      create: { wallet: wallet || 'demo-wallet', nonce: Math.random().toString() }
+    });
+
+    const result = await prisma.intent.create({
+      data: {
+        userId: user.id,
+        action: parsed.action,
+        source: JSON.stringify({ token: sourceTokenInfo.ticker, amount: parsed.amount, mint: sourceTokenInfo.mint }),
+        target: JSON.stringify({ token: targetTokenInfo.ticker, mint: targetTokenInfo.mint }),
+        status: "pending"
+      }
+    });
+    
+    // We parse back for the frontend
+    res.json({
+      ...result,
+      source: JSON.parse(result.source),
+      target: result.target ? JSON.parse(result.target) : null
+    });
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.post("/:id/simulate", async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { inputMint, outputMint, amount } = req.body;
+
+  try {
+    agentEngine.updateAgent("market", { status: "working", message: "Fetching Jupiter routes" });
+    agentEngine.addActivity({ agent: "Market", title: "Simulation Started", message: `Simulating swap on Jupiter.`, status: "info" });
+
+    const simulation = await jupiterService.simulateSwap(inputMint, outputMint, amount);
+
+    await prisma.simulation.create({
+      data: {
+        intentId: id,
+        data: JSON.stringify(simulation)
+      }
+    });
+
+    agentEngine.updateAgent("market", { status: "completed", message: "Simulation complete", progress: 100, confidence: 99 });
+    agentEngine.addActivity({ agent: "Market", title: "Simulation Complete", message: `Found route with price impact ${simulation.priceImpact}%`, status: "success" });
+
+    res.json(simulation);
+  } catch (error: any) {
+    agentEngine.updateAgent("market", { status: "failed", message: error.message });
+    agentEngine.addActivity({ agent: "Market", title: "Simulation Failed", message: error.message, status: "error" });
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post("/:id/prepare", (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { quoteResponse, walletAddress } = req.body;
+  try {
+    const result = transactionService.prepareTransaction(id, quoteResponse, walletAddress);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post("/:id/result", async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { signature, status } = req.body;
+  
+  agentEngine.updateAgent("execution", { status: "completed", message: "Transaction confirmed", progress: 100, confidence: 100 });
+  agentEngine.addActivity({ agent: "Execution", title: "Transaction Confirmed", message: `Signature: ${signature}`, status: "success" });
+  
+  const result = await transactionService.saveTransactionResult(id, signature, status);
+  res.json(result);
+});
+
+export default router;
