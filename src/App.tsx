@@ -15,6 +15,8 @@ import Portfolio from "./pages/Portfolio.tsx";
 import Intelligence from "./pages/Intelligence.tsx";
 import Simulation from "./pages/Simulation.tsx";
 import MarketRadar from "./pages/MarketRadar.tsx";
+import Settings from "./pages/Settings.tsx";
+import Support from "./pages/Support.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -60,6 +62,8 @@ const App = () => (
               <Route path="/intelligence" element={<Intelligence />} />
               <Route path="/simulation" element={<Simulation />} />
               <Route path="/market-radar" element={<MarketRadar />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/support" element={<Support />} />
               
               {/* Legacy redirects */}
               <Route path="/trade" element={<Navigate to="/agents" replace />} />
