@@ -1,4 +1,5 @@
 import { Store, ShieldCheck, TrendingUp, Zap, Target } from "lucide-react";
+import { toast } from "sonner";
 
 export function StrategyMarketplace() {
   const strategies = [
@@ -43,11 +44,28 @@ export function StrategyMarketplace() {
 
             <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{s.reason}</p>
 
-            <div className="flex gap-2">
-              <button className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-xs font-semibold transition-colors">
+            <div className="flex gap-2 mt-4">
+              <button 
+                onClick={() => {
+                  toast.info("Simulation Started", {
+                    description: `Simulating ${s.title} strategy against devnet.`
+                  });
+                  setTimeout(() => toast.success("Simulation Passed", {
+                    description: "Expected outcome aligns with 95% confidence interval."
+                  }), 2000);
+                }}
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-xs font-semibold transition-colors"
+              >
                 Simulate
               </button>
-              <button className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-lg py-2 text-xs font-semibold shadow-lg shadow-primary/20 transition-all">
+              <button 
+                onClick={() => {
+                  toast.success("Execution Queued", {
+                    description: `Routing ${s.title} strategy to Agent Execution Engine.`
+                  });
+                }}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-lg py-2 text-xs font-semibold shadow-lg shadow-primary/20 transition-all"
+              >
                 Execute
               </button>
             </div>

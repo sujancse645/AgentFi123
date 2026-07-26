@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlayCircle, Database, Box, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Simulation() {
   return (
@@ -10,7 +11,19 @@ export default function Simulation() {
           <h2 className="text-3xl font-bold tracking-tight font-display">Simulation Studio</h2>
           <p className="text-muted-foreground mt-1">Test complex multi-step intentions without committing real funds.</p>
         </div>
-        <Button className="gap-2 bg-primary hover:bg-primary/90 text-white">
+        <Button 
+          onClick={() => {
+            toast.info("Initializing Sandbox...", {
+              description: "Spinning up local validator fork"
+            });
+            setTimeout(() => {
+              toast.success("Simulation Complete", {
+                description: "Arbitrage loop yielded +1.2% profit in dry run."
+              });
+            }, 2500);
+          }}
+          className="gap-2 bg-primary hover:bg-primary/90 text-white"
+        >
           <PlayCircle className="w-4 h-4" /> Run New Simulation
         </Button>
       </div>

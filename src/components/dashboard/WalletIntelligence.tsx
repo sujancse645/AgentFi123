@@ -20,20 +20,22 @@ export function WalletIntelligence() {
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display font-bold">Wallet Intelligence</h3>
         {!isConnected && (
-          <span className="text-[10px] uppercase tracking-wider text-warning bg-warning/10 px-2 py-0.5 rounded border border-warning/20">
+          <span className="text-[10px] uppercase tracking-wider text-warning bg-warning/10 px-2 py-0.5 rounded border border-warning/20 whitespace-nowrap">
             Demo Mode
           </span>
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white/5 border border-white/5 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <stat.icon className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{stat.label}</span>
+          <div key={i} className="bg-white/5 border border-white/5 rounded-xl p-4 min-w-0 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1.5">
+              <stat.icon className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-tight sm:tracking-wider truncate">
+                {stat.label}
+              </span>
             </div>
-            <div className="text-xl font-mono font-bold">{stat.value}</div>
+            <div className="text-lg xl:text-xl font-mono font-bold truncate">{stat.value}</div>
           </div>
         ))}
       </div>
