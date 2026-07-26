@@ -1,24 +1,39 @@
 import { useAgentStore } from "@/store/useAgentStore";
-import { AgentEvent } from "@/types/agents";
+import { agentApi } from "./agentApi";
 
 let isRunning = false;
 let pollingInterval: NodeJS.Timeout | null = null;
 
-// The backend doesn't exist yet, so realtime will simply poll the intent status
-// if the backend *did* exist.
 export function startAgentPolling() {
   if (isRunning) return;
   isRunning = true;
   
-  // Example polling (noop if no current intent)
   pollingInterval = setInterval(async () => {
-    const intentId = useAgentStore.getState().currentIntentId;
-    if (!intentId) return;
-    
-    // In a real scenario, this fetches the latest intent state
-    // const status = await agentApi.getIntentStatus(intentId);
-    // useAgentStore.getState().hydrateFromBackend(status);
-  }, 2000);
+    try {
+      // 1. Fetch Agents State
+      const state = await agentApi.getAgentNetworkState();
+      
+      // 2. Fetch Activity
+      const activity = await agentApi.getAgentActivity();
+
+      // Hydrate Zustand store
+      useAgentStore.getState().hydrateFromBackend({
+        agents: state as any,
+        activityHistory: activity as any
+      });
+      
+      // Check if workflow has finished to stop polling
+      const intentStatus = useAgentStore.getState().agents?.execution?.status;
+      if (intentStatus === "completed" || intentStatus === "failed") {
+        // We do not automatically stop here because they might want to see updates,
+        // but we can stop to save serverless resources.
+        stopAgentPolling();
+      }
+      
+    } catch (e) {
+      console.error("Polling error:", e);
+    }
+  }, 2000); // 2-second polling for Serverless compatibility
 }
 
 export function stopAgentPolling() {

@@ -16,17 +16,17 @@ router.post("/", async (req: Request, res: Response) => {
     const parsed = await aiProvider.parseIntent(intent);
     
     // Check risk using the risk agent (mocked risk check)
-    agentEngine.updateAgent("risk", { status: "analyzing", message: "Evaluating token risk...", progress: 50 });
+    await agentEngine.updateAgent("risk", { status: "analyzing", message: "Evaluating token risk...", progress: 50 });
     
     const sourceTokenInfo = tokenRegistry.getTokenByTicker(parsed.sourceToken);
     const targetTokenInfo = tokenRegistry.getTokenByTicker(parsed.targetToken);
     
     if (!sourceTokenInfo || !targetTokenInfo) {
-      agentEngine.updateAgent("risk", { status: "failed", message: "Unverified token detected" });
+      await agentEngine.updateAgent("risk", { status: "failed", message: "Unverified token detected" });
       throw new Error("One or more tokens are not in the verified token registry.");
     }
 
-    agentEngine.updateAgent("risk", { status: "completed", message: "Risk checks passed", progress: 100, confidence: 99 });
+    await agentEngine.updateAgent("risk", { status: "completed", message: "Risk checks passed", progress: 100, confidence: 99 });
     
     const user = await prisma.user.upsert({
       where: { wallet: wallet || 'demo-wallet' },
@@ -60,8 +60,8 @@ router.post("/:id/simulate", async (req: Request, res: Response) => {
   const { inputMint, outputMint, amount } = req.body;
 
   try {
-    agentEngine.updateAgent("market", { status: "working", message: "Fetching Jupiter routes" });
-    agentEngine.addActivity({ agent: "Market", title: "Simulation Started", message: `Simulating swap on Jupiter.`, status: "info" });
+    await agentEngine.updateAgent("market", { status: "working", message: "Fetching Jupiter routes" });
+    await agentEngine.addActivity({ agent: "Market", title: "Simulation Started", message: `Simulating swap on Jupiter.`, status: "info" });
 
     const simulation = await jupiterService.simulateSwap(inputMint, outputMint, amount);
 
@@ -72,13 +72,13 @@ router.post("/:id/simulate", async (req: Request, res: Response) => {
       }
     });
 
-    agentEngine.updateAgent("market", { status: "completed", message: "Simulation complete", progress: 100, confidence: 99 });
-    agentEngine.addActivity({ agent: "Market", title: "Simulation Complete", message: `Found route with price impact ${simulation.priceImpact}%`, status: "success" });
+    await agentEngine.updateAgent("market", { status: "completed", message: "Simulation complete", progress: 100, confidence: 99 });
+    await agentEngine.addActivity({ agent: "Market", title: "Simulation Complete", message: `Found route with price impact ${simulation.priceImpact}%`, status: "success" });
 
     res.json(simulation);
   } catch (error: any) {
-    agentEngine.updateAgent("market", { status: "failed", message: error.message });
-    agentEngine.addActivity({ agent: "Market", title: "Simulation Failed", message: error.message, status: "error" });
+    await agentEngine.updateAgent("market", { status: "failed", message: error.message });
+    await agentEngine.addActivity({ agent: "Market", title: "Simulation Failed", message: error.message, status: "error" });
     res.status(400).json({ error: error.message });
   }
 });
@@ -98,8 +98,8 @@ router.post("/:id/result", async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const { signature, status } = req.body;
   
-  agentEngine.updateAgent("execution", { status: "completed", message: "Transaction confirmed", progress: 100, confidence: 100 });
-  agentEngine.addActivity({ agent: "Execution", title: "Transaction Confirmed", message: `Signature: ${signature}`, status: "success" });
+  await agentEngine.updateAgent("execution", { status: "completed", message: "Transaction confirmed", progress: 100, confidence: 100 });
+  await agentEngine.addActivity({ agent: "Execution", title: "Transaction Confirmed", message: `Signature: ${signature}`, status: "success" });
   
   const result = await transactionService.saveTransactionResult(id, signature, status);
   res.json(result);

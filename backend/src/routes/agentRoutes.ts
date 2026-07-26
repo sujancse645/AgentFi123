@@ -3,37 +3,22 @@ import { agentEngine } from "../agents/agentEngine";
 
 const router = Router();
 
-router.get("/state", (req: Request, res: Response) => {
-  res.json(agentEngine.getState());
+router.get("/state", async (req: Request, res: Response) => {
+  try {
+    const state = await agentEngine.getState();
+    res.json(state);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.get("/activity", (req: Request, res: Response) => {
-  res.json(agentEngine.getActivity());
-});
-
-router.get("/stream", (req: Request, res: Response) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  // Send initial state immediately
-  res.write(`data: ${JSON.stringify({ type: "state", data: agentEngine.getState() })}\n\n`);
-
-  const onStateUpdate = (state: any) => {
-    res.write(`data: ${JSON.stringify({ type: "state", data: state })}\n\n`);
-  };
-
-  const onActivityUpdate = (activity: any) => {
-    res.write(`data: ${JSON.stringify({ type: "activity", data: activity })}\n\n`);
-  };
-
-  agentEngine.on("state_update", onStateUpdate);
-  agentEngine.on("activity_update", onActivityUpdate);
-
-  req.on("close", () => {
-    agentEngine.removeListener("state_update", onStateUpdate);
-    agentEngine.removeListener("activity_update", onActivityUpdate);
-  });
+router.get("/activity", async (req: Request, res: Response) => {
+  try {
+    const activity = await agentEngine.getActivity();
+    res.json(activity);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

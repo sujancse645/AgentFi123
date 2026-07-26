@@ -1,16 +1,8 @@
 import { AgentNetworkState, AgentActivity, AgentState } from "../types/agents";
-import { EventEmitter } from "events";
 import { prisma } from "../prisma";
 
-class AgentEngine extends EventEmitter {
-  private state: AgentNetworkState;
-  private activity: AgentActivity[] = [];
-
-  constructor() {
-    super();
-    this.state = this.getInitialState();
-  }
-
+class AgentEngine {
+  
   private getInitialState(): AgentNetworkState {
     const defaultState: AgentState = {
       status: "idle",
@@ -29,50 +21,85 @@ class AgentEngine extends EventEmitter {
     };
   }
 
-  getState() {
-    return this.state;
-  }
-
-  getActivity() {
-    return this.activity;
-  }
-
-  updateAgent(agentName: keyof AgentNetworkState, updates: Partial<AgentState>) {
-    this.state[agentName] = {
-      ...this.state[agentName],
-      ...updates,
-      lastUpdated: new Date().toISOString()
-    };
+  async getState(): Promise<AgentNetworkState> {
+    const state = this.getInitialState();
     
-    // Save to DB (fire and forget)
-    prisma.agentEvent.create({
+    const types = ["planner", "risk", "market", "execution"];
+    for (const type of types) {
+      const latestEvent = await prisma.agentEvent.findFirst({
+        where: { agentType: type },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      if (latestEvent) {
+        state[type as keyof AgentNetworkState] = {
+          status: latestEvent.status as any,
+          progress: latestEvent.progress,
+          confidence: latestEvent.confidence,
+          currentTask: latestEvent.metadata ? JSON.parse(latestEvent.metadata).currentTask : "",
+          message: latestEvent.message,
+          lastUpdated: latestEvent.createdAt.toISOString()
+        };
+      }
+    }
+    
+    return state;
+  }
+
+  async getActivity(): Promise<AgentActivity[]> {
+    const logs = await prisma.agentActivityLog.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    });
+    
+    return logs.map(log => ({
+      id: log.id,
+      timestamp: log.timestamp.toISOString(),
+      agent: log.agent,
+      title: log.title,
+      message: log.message,
+      status: log.status as "info" | "success" | "warning" | "error"
+    }));
+  }
+
+  async updateAgent(agentName: keyof AgentNetworkState, updates: Partial<AgentState>) {
+    const currentState = await this.getState();
+    const agent = currentState[agentName];
+    
+    const status = updates.status ?? agent.status;
+    const progress = updates.progress ?? agent.progress;
+    const confidence = updates.confidence ?? agent.confidence;
+    const message = updates.message ?? agent.message;
+    const currentTask = updates.currentTask ?? agent.currentTask;
+
+    await prisma.agentEvent.create({
       data: {
         agentType: agentName,
-        status: this.state[agentName].status,
-        progress: this.state[agentName].progress,
-        confidence: this.state[agentName].confidence,
-        message: this.state[agentName].message,
-        metadata: JSON.stringify({ currentTask: this.state[agentName].currentTask })
+        status: status,
+        progress: progress,
+        confidence: confidence,
+        message: message,
+        metadata: JSON.stringify({ currentTask: currentTask })
       }
-    }).catch(e => console.error("Prisma error:", e));
-
-    this.emit("state_update", this.state);
+    });
   }
 
-  addActivity(activity: Omit<AgentActivity, "id" | "timestamp">) {
-    const newActivity: AgentActivity = {
-      ...activity,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toISOString()
-    };
-    this.activity.unshift(newActivity);
-    if (this.activity.length > 50) this.activity.pop();
-    this.emit("activity_update", newActivity);
+  async addActivity(activity: Omit<AgentActivity, "id" | "timestamp">) {
+    await prisma.agentActivityLog.create({
+      data: {
+        agent: activity.agent,
+        title: activity.title,
+        message: activity.message,
+        status: activity.status
+      }
+    });
   }
 
-  reset() {
-    this.state = this.getInitialState();
-    this.emit("state_update", this.state);
+  async reset() {
+    // Optionally delete all AgentEvents and AgentActivityLogs if a true reset is desired.
+    // For Vercel Serverless, we might just want to leave historical logs, or clear them.
+    await prisma.agentEvent.deleteMany({});
+    await prisma.agentActivityLog.deleteMany({});
   }
 }
 

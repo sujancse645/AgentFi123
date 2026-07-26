@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -51,31 +52,40 @@ model Simulation {
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  signature String   @unique
-  type      String
-  status    String
-  fromToken String
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  signature  String   @unique
+  type       String
+  status     String
+  fromToken  String
   fromAmount Float?
-  toToken   String?
-  toAmount  Float?
-  usdValue  Float?
-  timestamp DateTime @default(now())
-  intent    String?
-  riskLevel String?
-  route     String?
+  toToken    String?
+  toAmount   Float?
+  usdValue   Float?
+  timestamp  DateTime @default(now())
+  intent     String?
+  riskLevel  String?
+  route      String?
   networkFee Float?
 }
 
 model AgentEvent {
-  id        String   @id @default(uuid())
-  agentType String
-  status    String
-  progress  Int
+  id         String   @id @default(uuid())
+  agentType  String
+  status     String
+  progress   Int
   confidence Int
+  message    String
+  metadata   String?
+  createdAt  DateTime @default(now())
+}
+
+model AgentActivityLog {
+  id        String   @id @default(uuid())
+  agent     String
+  title     String
   message   String
-  metadata  String?
-  createdAt DateTime @default(now())
+  status    String
+  timestamp DateTime @default(now())
 }

@@ -10,7 +10,7 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async parseIntent(text: string): Promise<ParsedIntentResult> {
-    agentEngine.updateAgent("planner", { status: "analyzing", message: "OpenAI: Parsing intent...", progress: 30 });
+    await agentEngine.updateAgent("planner", { status: "analyzing", message: "OpenAI: Parsing intent...", progress: 30 });
     
     try {
       const completion = await this.openai.chat.completions.create({
@@ -27,10 +27,10 @@ export class OpenAIProvider implements AIProvider {
 
       const rawParsed = JSON.parse(responseText);
       const parsed = ParsedIntentSchema.parse(rawParsed);
-      agentEngine.updateAgent("planner", { status: "completed", message: "Parsed intent successfully", progress: 100, confidence: 95 });
+      await agentEngine.updateAgent("planner", { status: "completed", message: "Parsed intent successfully", progress: 100, confidence: 95 });
       return parsed;
     } catch (e: any) {
-      agentEngine.updateAgent("planner", { status: "failed", message: `AI Parse Failed: ${e.message}` });
+      await agentEngine.updateAgent("planner", { status: "failed", message: `AI Parse Failed: ${e.message}` });
       throw e;
     }
   }

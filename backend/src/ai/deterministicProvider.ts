@@ -3,10 +3,10 @@ import { agentEngine } from "../agents/agentEngine";
 
 export class DeterministicProvider implements AIProvider {
   async parseIntent(text: string): Promise<ParsedIntentResult> {
-    agentEngine.updateAgent("planner", { status: "analyzing", message: "Deterministic: Parsing intent...", progress: 30 });
+    await agentEngine.updateAgent("planner", { status: "analyzing", message: "Deterministic: Parsing intent...", progress: 30 });
     
     return new Promise((resolve) => {
-      setTimeout(() => {
+      setTimeout(async () => {
         const t = text.toLowerCase();
         let targetToken = "USDC";
         if (t.includes("bonk")) targetToken = "BONK";
@@ -19,7 +19,7 @@ export class DeterministicProvider implements AIProvider {
         const numMatch = text.match(/\d+(\.\d+)?/);
         const amount = numMatch ? parseFloat(numMatch[0]) : 1;
 
-        agentEngine.updateAgent("planner", { status: "completed", message: "Parsed intent successfully", progress: 100, confidence: 80 });
+        await agentEngine.updateAgent("planner", { status: "completed", message: "Parsed intent successfully", progress: 100, confidence: 80 });
         const parsed = ParsedIntentSchema.parse({
           action: "swap",
           amount,
