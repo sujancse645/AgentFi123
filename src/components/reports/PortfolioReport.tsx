@@ -9,7 +9,7 @@ export function PortfolioReport() {
   return (
     <div className="bg-white text-black rounded-xl p-8 max-w-4xl mx-auto shadow-2xl relative">
       <div className="absolute top-8 right-8 flex gap-2 no-print">
-        <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider bg-black/5 hover:bg-black/10 px-3 py-1.5 rounded transition-colors">
+        <button onClick={() => window.print()} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider bg-black/5 hover:bg-black/10 px-3 py-1.5 rounded transition-colors">
           <Download className="w-4 h-4" /> Export PDF
         </button>
         <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider bg-black/5 hover:bg-black/10 px-3 py-1.5 rounded transition-colors" onClick={() => window.print()}>

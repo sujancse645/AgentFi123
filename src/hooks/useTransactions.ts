@@ -23,6 +23,41 @@ export interface Transaction {
 
 const STORAGE_KEY = "agentfi_transactions";
 
+const DUMMY_TRANSACTIONS: Transaction[] = [
+  {
+    id: "dummy-1",
+    signature: "5rK...9pA",
+    type: "swap",
+    status: "confirmed",
+    fromToken: "USDC",
+    fromAmount: 1000,
+    toToken: "SOL",
+    toAmount: 6.5,
+    usdValue: 1000,
+    timestamp: Date.now() - 3600000 * 2,
+    intent: "Swap 1000 USDC to SOL",
+    riskLevel: "safe",
+    route: "Jupiter V6",
+    networkFee: 0.00001
+  },
+  {
+    id: "dummy-2",
+    signature: "2xL...4vN",
+    type: "buy",
+    status: "pending",
+    fromToken: "SOL",
+    fromAmount: 2.5,
+    toToken: "BONK",
+    toAmount: 120000000,
+    usdValue: 385,
+    timestamp: Date.now() - 300000,
+    intent: "Buy BONK with 2.5 SOL",
+    riskLevel: "caution",
+    route: "Raydium",
+    networkFee: 0.00005
+  }
+];
+
 export function useTransactions() {
   const { publicKey } = useWallet();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -35,6 +70,9 @@ export function useTransactions() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const allTxs: Transaction[] = JSON.parse(stored);
+          if (allTxs.length === 0) {
+            allTxs.push(...DUMMY_TRANSACTIONS);
+          }
           // Filter by current wallet if connected
           if (publicKey) {
             const walletKey = publicKey.toBase58();
@@ -46,6 +84,9 @@ export function useTransactions() {
           } else {
             setTransactions(allTxs);
           }
+        } else {
+          setTransactions(DUMMY_TRANSACTIONS);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(DUMMY_TRANSACTIONS));
         }
       } catch {
         console.error("Failed to load transactions");

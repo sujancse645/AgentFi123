@@ -1,5 +1,6 @@
 import { formatPercentage } from "@/utils/agentMetrics";
 import { Sparkles, Activity, ShieldAlert, Target, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
 import { demoPortfolio } from "@/services/demoPortfolio";
 import { riskEngine } from "@/services/riskEngine";
 import { recommendationEngine } from "@/services/recommendationEngine";
@@ -68,7 +69,19 @@ export function ExecutiveBriefing() {
               <span className="text-sm font-semibold text-success flex items-center gap-1">
                 Expected Benefit: {topRec.expectedImpact}
               </span>
-              <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 transition-all">
+              <button 
+                onClick={() => {
+                  toast.success("Execution Started", {
+                    description: `Executing: ${topRec.title}`,
+                  });
+                  setTimeout(() => {
+                    toast.success("Execution Completed", {
+                      description: `Successfully executed: ${topRec.title}`,
+                    });
+                  }, 2000);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 transition-all"
+              >
                 Execute Instantly
               </button>
             </div>
