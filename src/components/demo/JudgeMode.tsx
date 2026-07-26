@@ -1,5 +1,6 @@
 import { Play, Sparkles, ChevronRight, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function JudgeMode() {
@@ -30,7 +31,22 @@ export function JudgeMode() {
           Welcome Judges. This guided walkthrough will demonstrate the full capabilities of AgentFi, transforming from a simple dashboard into a proactive AI Wealth Operating System.
         </p>
 
-        <button className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 mb-12">
+        <button 
+          onClick={() => {
+            if (activeStep > 0) return;
+            toast.info("Demo Sequence Initiated", { description: "Running automated walkthrough..." });
+            let step = 0;
+            const interval = setInterval(() => {
+              step++;
+              if (step >= steps.length) {
+                clearInterval(interval);
+                toast.success("Demo Sequence Complete");
+              }
+              setActiveStep(step);
+            }, 2500);
+          }}
+          className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 mb-12"
+        >
           <Play className="w-5 h-5 fill-current" /> Start Hackathon Demo
         </button>
 

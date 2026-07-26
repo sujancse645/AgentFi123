@@ -1,4 +1,5 @@
 import { Monitor, Expand, LayoutDashboard, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 export function PresentationMode() {
   return (
@@ -13,10 +14,26 @@ export function PresentationMode() {
       </p>
 
       <div className="flex gap-4">
-        <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
-          <Expand className="w-4 h-4" /> Enter Fullscreen
+        <button 
+          onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen().catch(() => {
+                toast.error("Fullscreen API not supported");
+              });
+              toast.success("Presentation Mode Activated");
+            } else {
+              document.exitFullscreen();
+              toast.info("Exited Presentation Mode");
+            }
+          }}
+          className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+        >
+          <Expand className="w-4 h-4" /> Toggle Fullscreen
         </button>
-        <button className="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2">
+        <button 
+          onClick={() => toast.success("Layout Reset")}
+          className="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2"
+        >
           <LayoutDashboard className="w-4 h-4" /> Reset Layout
         </button>
       </div>

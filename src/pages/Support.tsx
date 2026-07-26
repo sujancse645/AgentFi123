@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Mail, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Support() {
   return (
@@ -19,7 +20,7 @@ export default function Support() {
               <CardDescription>Read our detailed guides and API references.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">View Docs</Button>
+              <Button onClick={() => window.open("https://docs.agentfi.io", "_blank")} className="w-full">View Docs</Button>
             </CardContent>
           </Card>
           
@@ -30,7 +31,7 @@ export default function Support() {
               <CardDescription>Join our Discord server to get help from others.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="secondary" className="w-full text-white/70 hover:text-white">Join Discord</Button>
+              <Button onClick={() => window.open("https://discord.gg/agentfi", "_blank")} variant="secondary" className="w-full text-white/70 hover:text-white">Join Discord</Button>
             </CardContent>
           </Card>
 
@@ -41,7 +42,9 @@ export default function Support() {
               <CardDescription>Send us an email for account-related issues.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full border-white/20 hover:bg-white/10">Contact Us</Button>
+              <Button onClick={() => {
+                toast.success("Support Ticket Created", { description: "Our team will reach out to your registered email." });
+              }} variant="outline" className="w-full border-white/20 hover:bg-white/10">Contact Us</Button>
             </CardContent>
           </Card>
         </div>

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Settings() {
   return (
@@ -22,7 +23,7 @@ export default function Settings() {
                   <p className="text-sm font-medium text-muted-foreground">Primary Endpoint</p>
                   <p className="text-sm font-mono mt-1 text-primary">https://api.mainnet-beta.solana.com</p>
                 </div>
-                <Button variant="secondary" className="w-full text-white/70 hover:text-white">Update RPC URL</Button>
+                <Button onClick={() => toast.info("Settings Locked", { description: "RPC settings are locked in demo mode." })} variant="secondary" className="w-full text-white/70 hover:text-white">Update RPC URL</Button>
               </div>
             </CardContent>
           </Card>
@@ -38,7 +39,7 @@ export default function Settings() {
                   <p className="text-sm font-medium text-muted-foreground">Active Model</p>
                   <p className="text-sm font-mono mt-1 text-primary">Deterministic Provider (Mock)</p>
                 </div>
-                <Button variant="secondary" className="w-full text-white/70 hover:text-white">Change Model</Button>
+                <Button onClick={() => toast.info("Settings Locked", { description: "AI Model preferences are locked in demo mode." })} variant="secondary" className="w-full text-white/70 hover:text-white">Change Model</Button>
               </div>
             </CardContent>
           </Card>
