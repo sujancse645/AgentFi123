@@ -46,6 +46,15 @@ app.use("/api/intents", intentRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/auth", authRoutes);
 
+// Root Endpoint
+app.get("/", (_req: Request, res: Response) => {
+  res.json({
+    service: "AgentFi Backend",
+    status: "online",
+    health: "/api/health"
+  });
+});
+
 // Health Endpoint
 app.get("/api/health", (req: Request, res: Response) => {
   res.json({
