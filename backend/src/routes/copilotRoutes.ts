@@ -116,6 +116,27 @@ router.post("/chat", async (req: Request, res: Response) => {
       });
     }
 
+    // Fast fake data for predefined demo prompts to prevent Vercel timeouts
+    const demoPrompts: Record<string, string> = {
+      "why is my risk score high?": "Your risk score is currently elevated because a significant portion of your portfolio is concentrated in high-volatility assets. To lower your risk, consider diversifying into stablecoins or staking your SOL.",
+      "what should i do with idle sol?": "You have idle SOL that could be generating yield. I recommend staking it natively or depositing it into a liquid staking protocol (like Jito or Marinade) to earn ~7-8% APY while maintaining liquidity.",
+      "how can i increase yield?": "To increase your overall yield, you can provide liquidity in SOL/USDC pools on Raydium or Orca, or explore delta-neutral yield strategies. Would you like me to prepare a transaction to deploy capital into a stable yield farm?",
+      "rebalance my portfolio": "I can help rebalance your portfolio to your target 60/40 allocation. This will involve swapping some of your highly appreciated altcoins back into SOL and USDC. Shall I simulate this rebalancing execution?"
+    };
+
+    if (demoPrompts[t]) {
+      // Small simulated delay for realism
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return res.json({
+        answer: demoPrompts[t],
+        provider: "deterministic",
+        model: "demo-fast",
+        dataSource: "AgentFi Demo Engine",
+        dataTimestamp: new Date().toISOString(),
+        isFallback: true
+      });
+    }
+
     const contextParts: string[] = [];
     const sources: string[] = [];
     let latestTimestamp = new Date().toISOString();
