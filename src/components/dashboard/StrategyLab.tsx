@@ -10,6 +10,7 @@ import { useSolBalance } from "@/hooks/useSolBalance";
 import { agentApi } from "@/services/agentApi";
 import { parseIntent, type ParsedIntent } from "@/lib/intentParser";
 import { ApprovalDialog } from "@/components/intent/ApprovalDialog";
+import { DemoSuccessModal } from "@/components/demo/DemoSuccessModal";
 
 export function StrategyLab() {
   const { connected, publicKey, wallet } = useWallet();
@@ -25,6 +26,7 @@ export function StrategyLab() {
   const [pendingExecutionScenario, setPendingExecutionScenario] = useState<string | null>(null);
   const [parsedIntent, setParsedIntent] = useState<ParsedIntent | null>(null);
   const [approvalOpen, setApprovalOpen] = useState(false);
+  const [demoSuccessOpen, setDemoSuccessOpen] = useState(false);
 
   const isZeroBalance = connected && liveSolBalance !== null && liveSolBalance <= 0;
 
@@ -154,7 +156,9 @@ export function StrategyLab() {
 
   const handleSign = (signature?: string) => {
     setApprovalOpen(false);
-    if (signature) {
+    if (signature === "demo-signature-success") {
+      setDemoSuccessOpen(true);
+    } else if (signature) {
       toast.success("Strategy Executed Successfully", {
         description: `Transaction confirmed on-chain.`
       });
@@ -336,6 +340,12 @@ export function StrategyLab() {
         onOpenChange={setApprovalOpen}
         onSign={handleSign}
         intent={parsedIntent}
+      />
+      <DemoSuccessModal 
+        open={demoSuccessOpen} 
+        onOpenChange={(open) => {
+          setDemoSuccessOpen(open);
+        }} 
       />
     </div>
   );

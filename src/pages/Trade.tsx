@@ -6,6 +6,7 @@ import { RiskCard } from "@/components/intent/RiskCard";
 import { SimulationCard } from "@/components/intent/SimulationCard";
 import { ApprovalDialog } from "@/components/intent/ApprovalDialog";
 import { StatusOverlay } from "@/components/intent/StatusOverlay";
+import { DemoSuccessModal } from "@/components/demo/DemoSuccessModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, ShieldCheck, Wallet, ArrowLeft, Check } from "lucide-react";
@@ -37,6 +38,7 @@ export default function Trade() {
   const [parsed, setParsed] = useState<ParsedIntent | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [demoSuccessOpen, setDemoSuccessOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [txSignature, setTxSignature] = useState<string | null>(null);
 
@@ -76,7 +78,11 @@ export default function Trade() {
     if (signature) {
       setTxSignature(signature);
     }
-    setStatusOpen(true);
+    if (signature === "demo-signature-success") {
+      setDemoSuccessOpen(true);
+    } else {
+      setStatusOpen(true);
+    }
   };
 
   const handleStatusClose = () => {
@@ -258,6 +264,13 @@ export default function Trade() {
         intent={parsed}
       />
       <StatusOverlay open={statusOpen} onClose={handleStatusClose} signature={txSignature} />
+      <DemoSuccessModal 
+        open={demoSuccessOpen} 
+        onOpenChange={(open) => {
+          setDemoSuccessOpen(open);
+          if (!open) handleStatusClose();
+        }} 
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Activity, ShieldCheck, Zap, Bot, Target, PlayCircle, Hexagon } from "lucide-react";
+import { useAgentStore } from "@/store/useAgentStore";
 
 // AgentFi Premium Design System Colors
 const COLORS = {
@@ -129,6 +130,9 @@ export default function Landing() {
           <Link to="/dashboard">
             <Button
               className="glow-btn bg-primary text-white h-11 px-6 rounded-xl font-medium"
+              onClick={() => {
+                useAgentStore.getState().exitDemoSession();
+              }}
             >
               Launch AgentFi
             </Button>
@@ -161,6 +165,9 @@ export default function Landing() {
               <Button
                 size="lg"
                 className="h-14 px-8 text-lg glow-btn bg-primary text-white rounded-xl"
+                onClick={() => {
+                  useAgentStore.getState().exitDemoSession();
+                }}
               >
                 Launch AgentFi →
               </Button>
@@ -170,6 +177,9 @@ export default function Landing() {
                 variant="outline"
                 size="lg"
                 className="h-14 px-8 text-lg glass-panel hover:bg-white/5 border-border text-textPrimary rounded-xl transition-all"
+                onClick={() => {
+                  useAgentStore.getState().startDemoSession();
+                }}
               >
                 <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo
               </Button>
@@ -259,6 +269,9 @@ export default function Landing() {
             <Button
               size="lg"
               className="h-14 px-10 text-lg glow-btn bg-primary text-white rounded-xl"
+              onClick={() => {
+                useAgentStore.getState().exitDemoSession();
+              }}
             >
               Launch AgentFi
             </Button>

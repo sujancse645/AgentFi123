@@ -11,6 +11,7 @@ import walletRoutes from "./routes/walletRoutes.js";
 import intentRoutes from "./routes/intentRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import demoRoutes from "./routes/demoRoutes.js";
 
 dotenv.config();
 
@@ -88,6 +89,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/intents", transactionLimiter, intentRoutes);
 app.use("/api/transactions", transactionLimiter, transactionRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/demo", transactionLimiter, demoRoutes);
 
 // Root Endpoints
 app.get("/", (_req: Request, res: Response) => {

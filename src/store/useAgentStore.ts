@@ -3,6 +3,14 @@ import { AgentId, AgentStatus, AgentState, AgentActivity } from "@/types/agents"
 
 export type ConnectionStatus = "connected" | "connecting" | "demo" | "offline" | "error";
 
+export interface DemoSession {
+  id: string;
+  isActive: boolean;
+  walletAddress: string;
+  simulatedBalanceSol: number;
+  startedAt: string;
+}
+
 interface AgentStore {
   // Network / Global
   connectionStatus: ConnectionStatus;
@@ -21,6 +29,11 @@ interface AgentStore {
   // Intent Flow state
   currentIntentId: string | null;
   currentIntentSummary: string | null;
+
+  // Demo Session
+  demoSession: DemoSession | null;
+  startDemoSession: () => void;
+  exitDemoSession: () => void;
 
   // Actions
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -50,8 +63,21 @@ const initialAgents: Record<AgentId, AgentState> = {
   health: { id: "health", name: "Health Agent", status: "idle", confidence: 100, progress: 0, currentTask: "Monitoring Vitals", message: "", lastUpdated: new Date().toISOString() }
 };
 
+const getInitialDemoSession = (): DemoSession | null => {
+  if (typeof window === "undefined") return null;
+  const stored = sessionStorage.getItem("agentfi_demo_session");
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+};
+
 export const useAgentStore = create<AgentStore>((set, get) => ({
-  connectionStatus: "connecting",
+  connectionStatus: getInitialDemoSession() ? "demo" : "connecting",
   activeAgents: 4,
   tasksRunning: 0,
   successRate: 99.8,
@@ -61,6 +87,24 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   activityHistory: [],
   currentIntentId: null,
   currentIntentSummary: null,
+  demoSession: getInitialDemoSession(),
+
+  startDemoSession: () => {
+    const session: DemoSession = {
+      id: crypto.randomUUID(),
+      isActive: true,
+      walletAddress: "DEMO_WALLET_AGENTFI_123",
+      simulatedBalanceSol: 10.0,
+      startedAt: new Date().toISOString()
+    };
+    sessionStorage.setItem("agentfi_demo_session", JSON.stringify(session));
+    set({ demoSession: session, connectionStatus: "demo" });
+  },
+
+  exitDemoSession: () => {
+    sessionStorage.removeItem("agentfi_demo_session");
+    set({ demoSession: null, connectionStatus: "connecting" });
+  },
 
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 

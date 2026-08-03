@@ -55,15 +55,18 @@ model Transaction {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id])
-  signature  String   @unique
-  type       String
-  status     String
-  fromToken  String
-  fromAmount Float?
-  toToken    String?
-  toAmount   Float?
-  usdValue   Float?
-  timestamp  DateTime @default(now())
+  signature         String?  @unique
+  type              String
+  status            String
+  fromToken         String
+  fromAmount        Float?
+  toToken           String?
+  toAmount          Float?
+  usdValue          Float?
+  timestamp         DateTime @default(now())
+  isDemo            Boolean  @default(false)
+  executionMode     String   @default("live")
+  demoTransactionId String?  @unique
   intent     String?
   riskLevel  String?
   route      String?
