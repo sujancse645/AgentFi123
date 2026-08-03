@@ -10,7 +10,7 @@
     "server:build": "tsc -p backend/tsconfig.json",
     "build": "cd backend && npx prisma generate && cd .. && tsc -p backend/tsconfig.json && vite build",
     "build:dev": "vite build --mode development",
-    "postinstall": "prisma generate --schema=./backend/prisma/schema.prisma",
+    "postinstall": "cd backend && npx prisma generate",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -125,6 +125,7 @@
   },
   "overrides": {
     "typescript": "5.8.3",
-    "typescript-eslint": "8.38.0"
+    "typescript-eslint": "8.38.0",
+    "rpc-websockets": "9.3.3"
   }
 }

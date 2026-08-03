@@ -5,6 +5,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,

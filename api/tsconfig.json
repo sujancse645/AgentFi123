@@ -1,0 +1,7 @@
+{
+  "extends": "../backend/tsconfig.json",
+  "compilerOptions": {
+    "outDir": null
+  },
+  "include": ["index.ts"]
+}
