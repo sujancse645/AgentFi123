@@ -37,7 +37,7 @@ export const ApprovalDialog = ({ open, onOpenChange, onSign, intent }: Props) =>
 
   const isDemo = connectionStatus === "demo";
 
-  const isSimulationIncomplete = executionAgent.status !== "waiting";
+  const isSimulationIncomplete = !intent?.simulation && !intent?.quoteResponse && !isDemo && executionAgent.status !== "waiting";
   const isRiskBlocked = riskAgent.status === "failed";
   const isBackendPending = connectionStatus === "connecting";
 
@@ -130,6 +130,12 @@ export const ApprovalDialog = ({ open, onOpenChange, onSign, intent }: Props) =>
             </div>
           )}
 
+          {intent.walletContext?.balance === 0 && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive font-medium flex items-center gap-2">
+              <span>⚠️ Your wallet has no SOL available.</span>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
@@ -144,7 +150,13 @@ export const ApprovalDialog = ({ open, onOpenChange, onSign, intent }: Props) =>
           <Button
             className="gap-2 bg-gradient-primary text-white hover:opacity-90 min-w-[140px]"
             onClick={handleSign}
-            disabled={signing || isSimulationIncomplete || isRiskBlocked || isBackendPending || !publicKey}
+            disabled={
+              signing ||
+              isSimulationIncomplete ||
+              isRiskBlocked ||
+              isBackendPending ||
+              (intent.walletContext ? intent.walletContext.balance === 0 || !intent.walletContext.hasSufficientBalance : false)
+            }
           >
             {signing ? (
               <>

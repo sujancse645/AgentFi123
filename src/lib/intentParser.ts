@@ -42,6 +42,8 @@ export interface ParsedIntent {
     balance: number;
     hasSufficientBalance: boolean;
     recommendedMax: number;
+    percentage?: number;
+    calculatedAmount?: number;
   };
 
   // Display extras
@@ -252,9 +254,32 @@ function detectAction(text: string): ActionKind {
   return "swap";
 }
 
-function extractAmount(text: string): { amount: number; isUsd: boolean; token?: string } {
+export function extractAmount(
+  text: string,
+  walletBalance: number = 0
+): { amount: number; isUsd: boolean; token?: string; percentage?: number } {
   const usd = text.match(/\$\s?(\d+(?:\.\d+)?)/);
-  if (usd) return { amount: parseFloat(usd[1]), isUsd: true };
+  if (usd && !text.includes("%")) return { amount: parseFloat(usd[1]), isUsd: true };
+
+  // Check for percentage e.g. "50%", "50 %", "Stake 50% SOL", "Move 20% into USDC"
+  const percentMatch = text.match(/(\d+(?:\.\d+)?)\s*%/);
+  if (percentMatch) {
+    const percentage = parseFloat(percentMatch[1]);
+    const tokenMatch = text.match(/%\s*(?:of\s*(?:idle\s*|my\s*)?)?(SOL|USDC|USDT|BONK|WIF|JUP|JTO|PYTH|POPCAT|RAY)/i);
+    const token = tokenMatch ? tokenMatch[1].toUpperCase() : "SOL";
+
+    // If explicit token amount is also present in parentheses or before percent e.g. "1.25 SOL (50%...)"
+    const explicitMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:SOL|USDC|USDT|BONK|WIF|JUP|JTO|PYTH|POPCAT|RAY)\s*(?:\(|\[)?\s*\d+\s*%/i);
+    let amount: number;
+    if (explicitMatch) {
+      amount = parseFloat(explicitMatch[1]);
+    } else {
+      const baseBalance = walletBalance > 0 ? walletBalance : 0;
+      amount = +(baseBalance * (percentage / 100)).toFixed(4);
+    }
+    return { amount, isUsd: false, token, percentage };
+  }
+
   const m = text.match(/(\d+(?:\.\d+)?)\s*(SOL|USDC|USDT|BONK|WIF|JUP|JTO|PYTH|POPCAT|RAY)/i);
   if (m) return { amount: parseFloat(m[1]), isUsd: false, token: m[2].toUpperCase() };
   const lone = text.match(/(\d+(?:\.\d+)?)/);
@@ -329,7 +354,8 @@ export interface ParseOptions {
 export async function parseIntent(input: string, options: ParseOptions = {}): Promise<ParsedIntent> {
   const text = input.trim() || "Swap 1 SOL for the best meme token";
   const action = detectAction(text);
-  const { amount, isUsd, token: amountToken } = extractAmount(text);
+  const walletBalance = options.walletBalance ?? 0;
+  const { amount, isUsd, token: amountToken, percentage } = extractAmount(text, walletBalance);
 
   const t = text.toLowerCase();
   const wantsMeme = /meme|best performing|pump|moon|degen|trending/.test(t);
@@ -476,13 +502,17 @@ export async function parseIntent(input: string, options: ParseOptions = {}): Pr
   }
   
   // Wallet balance validation
-  const walletBalance = options.walletBalance ?? 0;
   const requiredAmount = sourceToken === "SOL" ? inSol : amount;
-  const hasSufficientBalance = walletBalance >= requiredAmount;
+  const isZeroBalance = walletBalance <= 0;
+  const hasSufficientBalance = !isZeroBalance && (walletBalance >= requiredAmount);
   const recommendedMax = walletBalance * 0.95; // Keep 5% for fees
-  
-  if (!hasSufficientBalance) {
+
+  if (isZeroBalance) {
+    reasoning.push(`⚠️ Your wallet has no SOL available.`);
+  } else if (!hasSufficientBalance) {
     reasoning.push(`⚠️ Insufficient balance: You have ${walletBalance.toFixed(4)} SOL but need ${requiredAmount.toFixed(4)} SOL`);
+  } else if (percentage) {
+    reasoning.push(`✓ Staking ${amount.toFixed(4)} SOL (${percentage}% of ${walletBalance.toFixed(4)} SOL wallet balance)`);
   } else {
     reasoning.push(`✓ Sufficient balance: ${walletBalance.toFixed(4)} SOL available`);
   }
@@ -512,17 +542,19 @@ export async function parseIntent(input: string, options: ParseOptions = {}): Pr
   let quoteResponse: any = undefined;
   let jupRoute = pick(["Jupiter v6", "Orca Whirlpool", "Raydium CLMM"]);
   
-  if (inputMint && outputMint && action !== "send") {
+  if (inputMint && outputMint && action !== "send" && actualInUsd > 0) {
     try {
       const decimals = TOKEN_METADATA[sourceToken]?.decimals || 9;
       const actualAmount = isUsd ? (amount / solPrice) : amount;
       const amountInSmallestUnits = Math.floor(actualAmount * Math.pow(10, decimals));
       
-      const quoteUrl = `${JUPITER_API.quote}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountInSmallestUnits}&slippageBps=${Math.round(slippagePct * 100)}`;
-      const res = await fetch(quoteUrl);
-      if (res.ok) {
-        quoteResponse = await res.json();
-        jupRoute = "Jupiter v6 API";
+      if (amountInSmallestUnits > 0) {
+        const quoteUrl = `${JUPITER_API.quote}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountInSmallestUnits}&slippageBps=${Math.round(slippagePct * 100)}`;
+        const res = await fetch(quoteUrl);
+        if (res.ok) {
+          quoteResponse = await res.json();
+          jupRoute = "Jupiter v6 API";
+        }
       }
     } catch (e) {
       console.warn("Failed to fetch Jupiter quote", e);
@@ -548,6 +580,8 @@ export async function parseIntent(input: string, options: ParseOptions = {}): Pr
       balance: walletBalance,
       hasSufficientBalance,
       recommendedMax,
+      percentage,
+      calculatedAmount: amount,
     },
     meta: { 
       performance24h: perf24h, 
