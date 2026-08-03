@@ -11,4 +11,9 @@ export type ParsedIntentResult = z.infer<typeof ParsedIntentSchema>;
 
 export interface AIProvider {
   parseIntent(text: string): Promise<ParsedIntentResult>;
+  generateAnswer(input: { question: string; context?: string }): Promise<{
+    answer: string;
+    provider: string;
+    model: string;
+  }>;
 }

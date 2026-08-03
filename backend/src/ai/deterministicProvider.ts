@@ -43,4 +43,12 @@ export class DeterministicProvider implements AIProvider {
       }, 800); // Simulate network delay
     });
   }
+
+  async generateAnswer(input: { question: string; context?: string }): Promise<{ answer: string; provider: string; model: string }> {
+    return {
+      answer: "I am currently running in deterministic fallback mode. To enable full AI chat capabilities, please configure an AI provider API key.",
+      provider: "deterministic",
+      model: "fallback"
+    };
+  }
 }

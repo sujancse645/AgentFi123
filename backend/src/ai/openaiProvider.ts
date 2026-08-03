@@ -34,4 +34,28 @@ export class OpenAIProvider implements AIProvider {
       throw e;
     }
   }
+  async generateAnswer(input: { question: string; context?: string }): Promise<{ answer: string; provider: string; model: string }> {
+    try {
+      const systemContext = input.context 
+        ? `Use the following live data context to answer the user's question accurately. Do not invent prices or balances. Context: ${input.context}`
+        : "You are AgentFi's Financial Copilot. Answer user questions helpfully, concisely, and accurately.";
+
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemContext },
+          { role: "user", content: input.question }
+        ]
+      });
+
+      return {
+        answer: completion.choices[0].message.content || "No response generated.",
+        provider: "openai",
+        model: "gpt-4o"
+      };
+    } catch (e: any) {
+      console.error("OpenAI Generation Error:", e);
+      throw new Error(`OpenAI failed: ${e.message}`);
+    }
+  }
 }

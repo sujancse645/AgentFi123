@@ -98,8 +98,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.1.1",
-    "@types/react": "^18.3.23",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "18.3.x",
+    "@types/react-dom": "18.3.x",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
@@ -126,6 +126,8 @@
   "overrides": {
     "typescript": "5.8.3",
     "typescript-eslint": "8.38.0",
-    "rpc-websockets": "9.3.3"
+    "rpc-websockets": "9.3.3",
+    "@types/react": "18.3.x",
+    "@types/react-dom": "18.3.x"
   }
 }

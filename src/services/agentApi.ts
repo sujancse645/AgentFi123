@@ -62,5 +62,12 @@ export const agentApi = {
       body: JSON.stringify({ signature, status })
     }),
     
-  getTransaction: (signature: string) => fetchWithTimeout(`${API_BASE_URL}/transactions/${signature}`)
+  getTransaction: (signature: string) => fetchWithTimeout(`${API_BASE_URL}/transactions/${signature}`),
+
+  copilotChat: (message: string, walletAddress?: string) =>
+    fetchWithTimeout(`${API_BASE_URL}/copilot/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, walletAddress })
+    })
 };

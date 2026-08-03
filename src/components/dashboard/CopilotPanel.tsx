@@ -1,24 +1,21 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Sparkles, User, Bot, Loader2 } from "lucide-react";
+import { MessageSquare, Sparkles, User, Bot, Loader2, RefreshCcw } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { agentApi } from "@/services/agentApi";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  isError?: boolean;
 }
-
-const RANDOM_ANSWERS = [
-  "Based on my analysis, shifting 15% of your idle SOL into JitoSOL would increase your blended APY by 1.2% with minimal risk exposure.",
-  "Your risk score is currently elevated due to high concentration in meme coins. Consider rebalancing into stables or blue-chips.",
-  "I've scanned the network and found a profitable arbitrage loop involving USDC and RAY. Would you like me to simulate it?",
-  "To optimize yield, I recommend utilizing Kamino Finance vaults. Current expected APY is hovering around 18% for SOL/USDC.",
-  "Market conditions are highly volatile right now. A delta-neutral strategy using MarginFi might be the safest play for your idle capital."
-];
 
 export function CopilotPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { publicKey } = useWallet();
 
   const prompts = [
     "Why is my risk score high?",
@@ -35,20 +32,24 @@ export function CopilotPanel() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (text: string) => {
-    if (!text.trim()) return;
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isTyping) return;
     
     // Add user message
     setMessages(prev => [...prev, { role: "user", content: text }]);
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const randomAnswer = RANDOM_ANSWERS[Math.floor(Math.random() * RANDOM_ANSWERS.length)];
-      setMessages(prev => [...prev, { role: "assistant", content: randomAnswer }]);
+    try {
+      const response = await agentApi.copilotChat(text, publicKey?.toBase58());
+      setMessages(prev => [...prev, { role: "assistant", content: response.answer }]);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to connect to Copilot.");
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't process that request right now.", isError: true }]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -72,7 +73,9 @@ export function CopilotPanel() {
                 {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
               <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm ${
-                msg.role === 'user' ? 'bg-white/10 text-white rounded-tr-sm' : 'bg-primary/10 text-foreground rounded-tl-sm'
+                msg.role === 'user' ? 'bg-white/10 text-white rounded-tr-sm' : 
+                msg.isError ? 'bg-destructive/10 text-destructive rounded-tl-sm border border-destructive/20' : 
+                'bg-primary/10 text-foreground rounded-tl-sm'
               }`}>
                 {msg.content}
               </div>
