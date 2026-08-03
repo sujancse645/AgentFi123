@@ -1,5 +1,5 @@
-import { AgentNetworkState, AgentActivity, AgentState } from "../types/agents";
-import { prisma } from "../prisma";
+import { AgentNetworkState, AgentActivity, AgentState } from "../types/agents.js";
+import { prisma } from "../prisma.js";
 
 class AgentEngine {
   

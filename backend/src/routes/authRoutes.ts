@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma.js";
 import jwt from "jsonwebtoken";
 import { PublicKey } from "@solana/web3.js";
 import nacl from "tweetnacl";

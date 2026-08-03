@@ -1,4 +1,4 @@
-import app from "./app";
+import app from "./app.js";
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);

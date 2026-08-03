@@ -1,6 +1,6 @@
-import { AIProvider, ParsedIntentResult, ParsedIntentSchema } from "./aiProvider";
+import { AIProvider, ParsedIntentResult, ParsedIntentSchema } from "./aiProvider.js";
 import { OpenAI } from "openai";
-import { agentEngine } from "../agents/agentEngine";
+import { agentEngine } from "../agents/agentEngine.js";
 
 export class OpenAIProvider implements AIProvider {
   private openai: OpenAI;

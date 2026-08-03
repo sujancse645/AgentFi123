@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { solanaService } from "../services/solanaService";
+import { solanaService } from "../services/solanaService.js";
 
 const router = Router();
 

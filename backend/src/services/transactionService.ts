@@ -1,4 +1,4 @@
-import { prisma } from "../prisma";
+import { prisma } from "../prisma.js";
 
 export class TransactionService {
   prepareTransaction(intentId: string, quoteResponse: any, walletAddress: string) {

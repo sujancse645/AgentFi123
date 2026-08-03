@@ -1,6 +1,6 @@
-import { AIProvider } from "./aiProvider";
-import { OpenAIProvider } from "./openaiProvider";
-import { DeterministicProvider } from "./deterministicProvider";
+import { AIProvider } from "./aiProvider.js";
+import { OpenAIProvider } from "./openaiProvider.js";
+import { DeterministicProvider } from "./deterministicProvider.js";
 
 export const getAIProvider = (): AIProvider => {
   const apiKey = process.env.OPENAI_API_KEY;

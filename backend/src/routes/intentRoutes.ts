@@ -1,14 +1,13 @@
 import { Router, Request, Response } from "express";
-import { jupiterService } from "../services/jupiterService";
-import { transactionService } from "../services/transactionService";
-import { agentEngine } from "../agents/agentEngine";
-import { getAIProvider } from "../ai";
-import { tokenRegistry } from "../services/tokenRegistry";
+import { jupiterService } from "../services/jupiterService.js";
+import { transactionService } from "../services/transactionService.js";
+import { agentEngine } from "../agents/agentEngine.js";
+import { getAIProvider } from "../ai/index.js";
+import { tokenRegistry } from "../services/tokenRegistry.js";
+import { prisma } from "../prisma.js";
 
 const router = Router();
 const aiProvider = getAIProvider();
-
-import { prisma } from "../prisma";
 
 router.post("/", async (req: Request, res: Response) => {
   const { intent, wallet } = req.body;

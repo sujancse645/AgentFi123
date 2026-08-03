@@ -6,11 +6,11 @@ import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
 import crypto from "crypto";
-import agentRoutes from "./routes/agentRoutes";
-import walletRoutes from "./routes/walletRoutes";
-import intentRoutes from "./routes/intentRoutes";
-import transactionRoutes from "./routes/transactionRoutes";
-import authRoutes from "./routes/authRoutes";
+import agentRoutes from "./routes/agentRoutes.js";
+import walletRoutes from "./routes/walletRoutes.js";
+import intentRoutes from "./routes/intentRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -89,10 +89,18 @@ app.use("/api/intents", transactionLimiter, intentRoutes);
 app.use("/api/transactions", transactionLimiter, transactionRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 
-// Root Endpoint
+// Root Endpoints
 app.get("/", (_req: Request, res: Response) => {
   res.json({
     service: "AgentFi Backend",
+    status: "online",
+    health: "/api/health"
+  });
+});
+
+app.get("/api", (_req: Request, res: Response) => {
+  res.json({
+    service: "AgentFi Backend API",
     status: "online",
     health: "/api/health"
   });

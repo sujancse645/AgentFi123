@@ -8,7 +8,7 @@
     "server": "node backend/dist/server.js",
     "server:dev": "tsx backend/src/server.ts",
     "server:build": "tsc -p backend/tsconfig.json",
-    "build": "prisma generate --schema=./backend/prisma/schema.prisma && vite build",
+    "build": "cd backend && npx prisma generate && cd .. && tsc -p backend/tsconfig.json && vite build",
     "build:dev": "vite build --mode development",
     "postinstall": "prisma generate --schema=./backend/prisma/schema.prisma",
     "lint": "eslint .",

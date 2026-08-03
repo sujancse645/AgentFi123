@@ -1,5 +1,5 @@
-import { AIProvider, ParsedIntentResult, ParsedIntentSchema } from "./aiProvider";
-import { agentEngine } from "../agents/agentEngine";
+import { AIProvider, ParsedIntentResult, ParsedIntentSchema } from "./aiProvider.js";
+import { agentEngine } from "../agents/agentEngine.js";
 
 export class DeterministicProvider implements AIProvider {
   async parseIntent(text: string): Promise<ParsedIntentResult> {

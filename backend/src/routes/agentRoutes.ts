@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { agentEngine } from "../agents/agentEngine";
+import { agentEngine } from "../agents/agentEngine.js";
 
 const router = Router();
 
