@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { agentApi } from "@/services/agentApi";
 import { useAgentStore } from "@/store/useAgentStore";
 import { startDemoEngine, stopDemoEngine } from "@/services/demoAgentEngine";
@@ -6,7 +6,6 @@ import { startAgentPolling, stopAgentPolling } from "@/services/agentRealtime";
 
 export function useBackendHealth() {
   const setConnectionStatus = useAgentStore((state) => state.setConnectionStatus);
-  const [init, setInit] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -15,10 +14,12 @@ export function useBackendHealth() {
       if (!mounted) return;
       try {
         await agentApi.healthCheck();
+        if (!mounted) return;
         setConnectionStatus("connected");
-        startAgentPolling(); // Fallback polling if connected but no SSE
+        startAgentPolling(); // Fallback polling if connected
         stopDemoEngine();
       } catch (error) {
+        if (!mounted) return;
         if (import.meta.env.VITE_ENABLE_DEMO_FALLBACK === "true") {
           setConnectionStatus("demo");
           startDemoEngine();
@@ -28,11 +29,8 @@ export function useBackendHealth() {
       }
     }
 
-    if (!init) {
-      setConnectionStatus("connecting");
-      checkHealth();
-      setInit(true);
-    }
+    setConnectionStatus("connecting");
+    checkHealth();
 
     const interval = setInterval(checkHealth, 15000);
 
@@ -42,5 +40,5 @@ export function useBackendHealth() {
       stopAgentPolling();
       stopDemoEngine();
     };
-  }, [init, setConnectionStatus]);
+  }, [setConnectionStatus]);
 }

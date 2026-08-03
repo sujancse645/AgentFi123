@@ -14,17 +14,60 @@ import authRoutes from "./routes/authRoutes";
 
 dotenv.config();
 
+const isDevelopment = process.env.NODE_ENV !== "production";
 const app = express();
 
-const limiter = rateLimit({
+// 1. Stricter Rate Limiter for Authentication Endpoints (e.g., /api/auth/*)
+export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: isDevelopment ? 100 : 20, // 20 requests per 15 min in prod, 100 in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many authentication requests, please try again later.",
+    retryAfter: "Please try again later"
+  }
+});
+
+// 2. Stricter Rate Limiter for Transaction & Intent Execution Endpoints (e.g., /api/intents/*, /api/transactions/*)
+export const transactionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopment ? 300 : 60, // 60 write/execution requests per 15 min in prod, 300 in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many intent or transaction requests, please try again later.",
+    retryAfter: "Please try again later"
+  }
+});
+
+// 3. General API Limiter with Polling Support
+export const generalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopment ? 5000 : 1000, // 1000 requests per 15 min in prod, 5000 in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many requests",
+    retryAfter: "Please try again later"
+  },
+  skip: (req: Request) => {
+    if (!isDevelopment) return false;
+    const url = req.originalUrl || req.url || req.path;
+    return (
+      url === "/" ||
+      url.includes("/health") ||
+      url.includes("/agents/state") ||
+      url.includes("/agents/activity") ||
+      url.includes("/metrics")
+    );
+  }
 });
 
 // Middleware
 app.use(helmet());
 app.use(compression());
-app.use(limiter);
+app.use(generalApiLimiter);
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || "http://localhost:8080",
   credentials: true
@@ -42,9 +85,9 @@ app.use(morgan("dev"));
 // Routes
 app.use("/api/agents", agentRoutes);
 app.use("/api/wallet", walletRoutes);
-app.use("/api/intents", intentRoutes);
-app.use("/api/transactions", transactionRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/intents", transactionLimiter, intentRoutes);
+app.use("/api/transactions", transactionLimiter, transactionRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
 
 // Root Endpoint
 app.get("/", (_req: Request, res: Response) => {
