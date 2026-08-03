@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node backend/dist/server.js",
+    "server:dev": "tsx backend/src/server.ts",
+    "server:build": "tsc -p backend/tsconfig.json",
     "build": "prisma generate --schema=./backend/prisma/schema.prisma && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
