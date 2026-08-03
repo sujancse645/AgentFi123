@@ -17,57 +17,84 @@ const getSolanaConnection = () => {
 };
 
 // Fetch current Jupiter price context
-const getMarketContext = async (query: string): Promise<string> => {
+const getMarketContext = async (query: string): Promise<{ text: string; source: string; timestamp: string } | null> => {
   try {
-    const isPrice = query.includes("price");
-    if (!isPrice) return "";
+    const isPrice = query.includes("price") || query.includes("quote");
+    if (!isPrice) return null;
 
-    // Parse tokens (naive approach for demonstration, defaults to SOL)
+    // Basic heuristic to find token
     let token = "SOL";
     if (query.toUpperCase().includes("JUP")) token = "JUP";
-    if (query.toUpperCase().includes("BONK")) token = "BONK";
+    else if (query.toUpperCase().includes("BONK")) token = "BONK";
+    else if (query.toUpperCase().includes("USDC")) token = "USDC";
+    else {
+      // If asking for a token we don't recognize, return unavailable
+      const match = query.match(/price of (\w+)/i);
+      if (match && !["SOL", "JUP", "BONK", "USDC"].includes(match[1].toUpperCase())) {
+        return { text: "Live market data is currently unavailable.", source: "Jupiter Price V3", timestamp: new Date().toISOString() };
+      }
+    }
 
-    const priceApi = process.env.JUPITER_PRICE_URL || "https://api.jup.ag/price/v2";
-    // We just look up a commonly known mint or assume they mean SOL for simplicity,
-    // A robust version would map tokens to mints. Here we just try SOL -> USDC
-    const solMint = "So11111111111111111111111111111111111111112";
-    const bonkMint = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
-    const jupMint = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
+    const priceApi = process.env.JUPITER_PRICE_API_URL || "https://api.jup.ag/price/v3";
+    const apiKey = process.env.JUPITER_API_KEY;
     
-    let mintId = solMint;
-    if (token === "BONK") mintId = bonkMint;
-    if (token === "JUP") mintId = jupMint;
+    const mints: Record<string, string> = {
+      "SOL": "So11111111111111111111111111111111111111112",
+      "BONK": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "JUP": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "USDC": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    };
+    
+    const mintId = mints[token];
+    if (!mintId) {
+      return { text: "Live market data is currently unavailable.", source: "Jupiter Price API", timestamp: new Date().toISOString() };
+    }
 
-    const res = await fetch(`${priceApi}?ids=${mintId}`);
+    const headers: Record<string, string> = {};
+    if (apiKey) {
+      headers["x-api-key"] = apiKey;
+    }
+
+    const res = await fetch(`${priceApi}?ids=${mintId}`, { headers });
     if (!res.ok) throw new Error("Price fetch failed");
     const data = await res.json();
     
     const priceInfo = data.data[mintId];
+    const timestamp = new Date().toISOString();
     if (priceInfo && priceInfo.price) {
-      return `Live market data retrieved at ${new Date().toISOString()}: ${token} price is $${priceInfo.price} USD.`;
+      return { 
+        text: `Live market data retrieved at ${timestamp}: ${token} price is $${priceInfo.price} USD.`,
+        source: "Jupiter Price V3",
+        timestamp
+      };
     }
-    return "Live market data is currently unavailable.";
+    return { text: "Live market data is currently unavailable.", source: "Jupiter Price V3", timestamp };
   } catch (err) {
     console.error("Market context error:", err);
-    return "Live market data is currently unavailable.";
+    return { text: "Live market data is currently unavailable.", source: "Jupiter Price V3", timestamp: new Date().toISOString() };
   }
 };
 
-const getWalletContext = async (query: string, walletAddress?: string): Promise<string> => {
-  if (!walletAddress) return "";
+const getWalletContext = async (query: string, walletAddress?: string): Promise<{ text: string; source: string; timestamp: string } | null> => {
+  if (!walletAddress) return null;
   const t = query.toLowerCase();
-  if (!t.includes("balance") && !t.includes("wallet")) return "";
+  if (!t.includes("balance") && !t.includes("wallet")) return null;
 
+  const timestamp = new Date().toISOString();
   try {
     const pubKey = new PublicKey(walletAddress);
     const connection = getSolanaConnection();
     const balanceLamports = await connection.getBalance(pubKey);
     const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
     
-    return `Live wallet data retrieved at ${new Date().toISOString()} via ${connection.rpcEndpoint}: The connected wallet (${walletAddress}) has a balance of ${balanceSol} SOL.`;
+    return {
+      text: `Live wallet data retrieved at ${timestamp} via ${connection.rpcEndpoint}: The connected wallet (${walletAddress}) has a balance of ${balanceSol} SOL.`,
+      source: "Solana RPC",
+      timestamp
+    };
   } catch (err: any) {
     console.error("Wallet context error:", err);
-    return `Could not fetch live wallet balance: ${err.message}`;
+    return { text: `Could not fetch live wallet balance: ${err.message}`, source: "Solana RPC", timestamp };
   }
 };
 
@@ -76,17 +103,39 @@ router.post("/chat", async (req: Request, res: Response) => {
     const { message, walletAddress } = copilotChatSchema.parse(req.body);
 
     const t = message.toLowerCase();
-    let contextParts: string[] = [];
+    
+    // Check for news
+    if (t.includes("news")) {
+      return res.json({
+        answer: "Live news is unavailable unless a trusted news source is integrated.",
+        provider: "deterministic",
+        model: "fallback",
+        dataSource: "None",
+        dataTimestamp: new Date().toISOString(),
+        isFallback: true
+      });
+    }
 
-    if (t.includes("price") || t.includes("swap") || t.includes("quote")) {
-      contextParts.push(await getMarketContext(message));
+    const contextParts: string[] = [];
+    const sources: string[] = [];
+    let latestTimestamp = new Date().toISOString();
+
+    const marketCtx = await getMarketContext(message);
+    if (marketCtx) {
+      contextParts.push(marketCtx.text);
+      sources.push(marketCtx.source);
+      latestTimestamp = marketCtx.timestamp;
     }
     
-    if (t.includes("balance") || t.includes("wallet")) {
-      contextParts.push(await getWalletContext(message, walletAddress));
+    const walletCtx = await getWalletContext(message, walletAddress);
+    if (walletCtx) {
+      contextParts.push(walletCtx.text);
+      sources.push(walletCtx.source);
+      latestTimestamp = walletCtx.timestamp;
     }
 
-    const context = contextParts.filter(Boolean).join("\n");
+    const context = contextParts.length > 0 ? contextParts.join("\n") : undefined;
+    const dataSource = sources.length > 0 ? sources.join(" | ") : "None";
 
     const provider = getAIProvider();
     
@@ -98,7 +147,7 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     const response = await provider.generateAnswer({
       question: message,
-      context: context || undefined,
+      context,
     });
 
     await agentEngine.updateAgent("planner", { 
@@ -110,8 +159,9 @@ router.post("/chat", async (req: Request, res: Response) => {
       answer: response.answer,
       provider: response.provider,
       model: response.model,
-      isFallback: response.provider === "deterministic",
-      timestamp: new Date().toISOString()
+      dataSource,
+      dataTimestamp: latestTimestamp,
+      isFallback: response.provider === "deterministic"
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -125,8 +175,9 @@ router.post("/chat", async (req: Request, res: Response) => {
       answer: "I am experiencing technical difficulties and cannot reach the AI provider right now. Please try again later.",
       provider: "deterministic",
       model: "fallback",
-      isFallback: true,
-      timestamp: new Date().toISOString()
+      dataSource: "None",
+      dataTimestamp: new Date().toISOString(),
+      isFallback: true
     });
   }
 });

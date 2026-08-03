@@ -60,7 +60,7 @@ export const ParsedIntentCard = ({ intent }: Props) => {
                   ) : (
                     <Activity className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                   )}
-                  <span>{reason.replace(/[⚠️✓]\s*/, "")}</span>
+                  <span>{reason.replace(/(⚠️|✓)\s*/g, "")}</span>
                 </div>
               ))}
             </div>

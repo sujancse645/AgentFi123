@@ -8,6 +8,13 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   isError?: boolean;
+  metadata?: {
+    provider: string;
+    model: string;
+    dataSource: string;
+    dataTimestamp: string;
+    isFallback: boolean;
+  };
 }
 
 export function CopilotPanel() {
@@ -42,7 +49,17 @@ export function CopilotPanel() {
 
     try {
       const response = await agentApi.copilotChat(text, publicKey?.toBase58());
-      setMessages(prev => [...prev, { role: "assistant", content: response.answer }]);
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: response.answer,
+        metadata: {
+          provider: response.provider,
+          model: response.model,
+          dataSource: response.dataSource,
+          dataTimestamp: response.dataTimestamp,
+          isFallback: response.isFallback
+        }
+      }]);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to connect to Copilot.");
@@ -72,12 +89,18 @@ export function CopilotPanel() {
               }`}>
                 {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
-              <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm ${
+              <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm flex flex-col gap-1 ${
                 msg.role === 'user' ? 'bg-white/10 text-white rounded-tr-sm' : 
                 msg.isError ? 'bg-destructive/10 text-destructive rounded-tl-sm border border-destructive/20' : 
                 'bg-primary/10 text-foreground rounded-tl-sm'
               }`}>
-                {msg.content}
+                <span>{msg.content}</span>
+                {msg.metadata && (
+                  <span className="text-[10px] opacity-50 mt-1 flex flex-col gap-0.5">
+                    <span>{msg.metadata.provider === 'deterministic' ? 'Mode: Fallback' : `Model: ${msg.metadata.model}`}</span>
+                    <span>Source: {msg.metadata.dataSource}</span>
+                  </span>
+                )}
               </div>
             </div>
           ))}
