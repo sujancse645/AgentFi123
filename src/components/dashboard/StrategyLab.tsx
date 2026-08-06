@@ -28,7 +28,7 @@ export function StrategyLab() {
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [demoSuccessOpen, setDemoSuccessOpen] = useState(false);
 
-  const isZeroBalance = connected && liveSolBalance !== null && liveSolBalance <= 0;
+  const isZeroBalance = !isDemo && connected && liveSolBalance !== null && liveSolBalance <= 0;
 
   const scenarios = [
     { id: "stake", title: "Stake 50% SOL", riskChange: "Unchanged", healthChange: "+8", yieldChange: "+7.4%", reason: "Idle assets converted into yield-generating positions." },
@@ -49,7 +49,7 @@ export function StrategyLab() {
       return;
     }
 
-    if (!connected) {
+    if (!isDemo && !connected) {
       setPendingExecutionScenario(targetId);
       setVisible(true);
       toast.info("Please connect your Solana wallet to execute this strategy.");
@@ -57,19 +57,17 @@ export function StrategyLab() {
     }
 
     // Fetch latest balance from connection or hook
-    let effectiveBalance = 2.5; // fallback
-    if (connected && publicKey && connection) {
+    let effectiveBalance = isDemo ? 10 : 0; 
+    if (!isDemo && connected && publicKey && connection) {
       try {
         const lamports = await connection.getBalance(publicKey, "confirmed");
         effectiveBalance = lamports / 1_000_000_000;
       } catch {
         effectiveBalance = liveSolBalance ?? 0;
       }
-    } else if (isDemo) {
-      effectiveBalance = 2.5;
     }
 
-    if (connected && effectiveBalance <= 0) {
+    if (!isDemo && connected && effectiveBalance <= 0) {
       toast.error("Your wallet has no SOL available.");
       return;
     }
@@ -134,7 +132,7 @@ export function StrategyLab() {
     } finally {
       setIsPreparing(false);
     }
-  }, [activeScenario, connected, publicKey, connection, liveSolBalance, isDemo, setVisible, scenarios]);
+  }, [activeScenario, connected, publicKey, connection, liveSolBalance, isDemo, setVisible]);
 
   // Auto-continue when wallet connects after user initiated execution
   useEffect(() => {

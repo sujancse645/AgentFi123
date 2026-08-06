@@ -28,6 +28,27 @@ export class TransactionService {
   async getTransaction(signature: string) {
     return await prisma.transaction.findUnique({ where: { signature } });
   }
+
+  async getTransactions(wallet?: string, demoSessionId?: string, mode?: string) {
+    const where: any = {};
+    if (mode === 'demo') {
+      where.isDemo = true;
+      if (demoSessionId) {
+        where.demoTransactionId = { startsWith: demoSessionId };
+      }
+    } else if (mode === 'live') {
+      where.isDemo = false;
+      if (wallet) {
+        where.user = { wallet };
+      }
+    }
+
+    return await prisma.transaction.findMany({
+      where,
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    });
+  }
 }
 
 export const transactionService = new TransactionService();

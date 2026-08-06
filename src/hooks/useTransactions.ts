@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { ActionKind } from "@/lib/intentParser";
+import { agentApi } from "@/services/agentApi";
 
 export type TransactionStatus = "pending" | "confirmed" | "failed";
 
@@ -63,33 +64,24 @@ export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load transactions from localStorage
   useEffect(() => {
-    const loadTransactions = () => {
+    const loadTransactions = async () => {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const allTxs: Transaction[] = JSON.parse(stored);
-          if (allTxs.length === 0) {
-            allTxs.push(...DUMMY_TRANSACTIONS);
-          }
-          // Filter by current wallet if connected
-          if (publicKey) {
-            const walletKey = publicKey.toBase58();
-            setTransactions(
-              allTxs.filter(
-                (tx) => !tx.id.includes(":") || tx.id.startsWith(walletKey)
-              )
-            );
-          } else {
-            setTransactions(allTxs);
-          }
-        } else {
-          setTransactions(DUMMY_TRANSACTIONS);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(DUMMY_TRANSACTIONS));
+        setLoading(true);
+        // Note: You would normally determine demoSessionId / mode from a global context.
+        // For now, we will fetch live transactions for the connected wallet.
+        const params: any = {};
+        if (publicKey) {
+          params.wallet = publicKey.toBase58();
+          params.mode = "live";
         }
-      } catch {
-        console.error("Failed to load transactions");
+        
+        // If not connected, we could fetch demo transactions or just return empty.
+        // We'll fetch everything if no wallet, but in reality we'd restrict it.
+        const txs = await agentApi.getTransactions<Transaction[]>(params);
+        setTransactions(txs || []);
+      } catch (error) {
+        console.error("Failed to load transactions", error);
       } finally {
         setLoading(false);
       }
@@ -98,76 +90,31 @@ export function useTransactions() {
     loadTransactions();
   }, [publicKey]);
 
-  // Add a new transaction
+  // Add a new transaction (Optimistic UI update)
   const addTransaction = useCallback((tx: Omit<Transaction, "id">) => {
     const newTx: Transaction = {
       ...tx,
       id: `${publicKey?.toBase58() || "anon"}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
     };
 
-    setTransactions((prev) => {
-      const updated = [newTx, ...prev];
-      // Persist to localStorage
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        const allTxs: Transaction[] = stored ? JSON.parse(stored) : [];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([newTx, ...allTxs]));
-      } catch {
-        console.error("Failed to save transaction");
-      }
-      return updated;
-    });
-
+    setTransactions((prev) => [newTx, ...prev]);
     return newTx;
   }, [publicKey]);
 
-  // Update transaction status
+  // Update transaction status (Optimistic UI update)
   const updateTransaction = useCallback(
     (id: string, updates: Partial<Transaction>) => {
-      setTransactions((prev) => {
-        const updated = prev.map((tx) =>
-          tx.id === id ? { ...tx, ...updates } : tx
-        );
-        // Persist updates
-        try {
-          const stored = localStorage.getItem(STORAGE_KEY);
-          const allTxs: Transaction[] = stored ? JSON.parse(stored) : [];
-          const otherTxs = allTxs.filter((tx) => tx.id !== id);
-          const updatedTx = allTxs.find((tx) => tx.id === id);
-          if (updatedTx) {
-            localStorage.setItem(
-              STORAGE_KEY,
-              JSON.stringify([{ ...updatedTx, ...updates }, ...otherTxs])
-            );
-          }
-        } catch {
-          console.error("Failed to update transaction");
-        }
-        return updated;
-      });
+      setTransactions((prev) =>
+        prev.map((tx) => (tx.id === id ? { ...tx, ...updates } : tx))
+      );
     },
     []
   );
 
-  // Clear all transactions
+  // Clear all transactions locally
   const clearTransactions = useCallback(() => {
     setTransactions([]);
-    try {
-      if (publicKey) {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        const allTxs: Transaction[] = stored ? JSON.parse(stored) : [];
-        const walletKey = publicKey.toBase58();
-        const otherTxs = allTxs.filter(
-          (tx) => !tx.id.startsWith(walletKey)
-        );
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(otherTxs));
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    } catch {
-      console.error("Failed to clear transactions");
-    }
-  }, [publicKey]);
+  }, []);
 
   // Stats
   const stats = {
