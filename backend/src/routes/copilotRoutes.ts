@@ -170,11 +170,11 @@ router.post("/chat", async (req: Request, res: Response) => {
     
     console.error("Copilot chat error:", error);
     
-    // Graceful deterministic fallback on severe error
+    // Surface actual error for debugging
     res.json({
-      answer: "I am experiencing technical difficulties and cannot reach the AI provider right now. Please try again later.",
-      provider: "deterministic",
-      model: "fallback",
+      answer: `Error: ${error.message}`,
+      provider: "system",
+      model: "error",
       dataSource: "None",
       dataTimestamp: new Date().toISOString(),
       isFallback: true

@@ -42,20 +42,13 @@ export class GeminiProvider implements AIProvider {
         ? `Use the following live data context to answer the user's question accurately. Do not invent prices or balances. Context: ${input.context}`
         : "You are AgentFi's Financial Copilot. Answer user questions helpfully, concisely, and accurately.";
 
-      const timeoutMs = 8000;
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs)
-      );
-
-      const requestPromise = this.ai.models.generateContent({
+      const response = await this.ai.models.generateContent({
         model: this.model,
         contents: input.question,
         config: {
           systemInstruction: systemContext
         }
       });
-
-      const response = await Promise.race([requestPromise, timeoutPromise]);
 
       return {
         answer: response.text || "No response generated.",
