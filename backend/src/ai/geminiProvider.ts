@@ -4,7 +4,7 @@ import { agentEngine } from "../agents/agentEngine.js";
 
 export class GeminiProvider implements AIProvider {
   private ai: GoogleGenAI;
-  private model = "gemini-2.5-flash";
+  private model = "gemini-1.5-flash";
 
   constructor(apiKey: string) {
     this.ai = new GoogleGenAI({ apiKey });
